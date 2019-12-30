@@ -1,0 +1,1 @@
+DROP TABLE IS EXISTS noteful_folders;
