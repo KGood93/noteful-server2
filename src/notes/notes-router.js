@@ -1,38 +1,42 @@
 const path = require("path")
 const express = require("express")
 const xss = require("xss")
-const jsonParser = express.json()
 const noteService = require("./notes-service")
+
 const notesRouter = express.Router()
+const jsonParser = express.json()
 
 const serializeNote = note => ({
     id: note.id,
     name: xss(note.name),
-    folderid: note.folderid,
-    content: xss(note.content)
+    content: xss(note.content),
+    date_modified: note.date_modified,
+    folder_id: note.folder_id,
 });
 
 notesRouter
-    .route("/")
+    .route('/')
     .get((req, res, next) => {
-        const knexInstance = req.app.get("db");
-        noteService.getAllNotes(knexInstance)
+        noteService.getAllNotes(req.app.get('db'))
             .then(notes => {
                 res.json(notes.map(serializeNote))
             })
             .catch(next)
     })
     .post(jsonParser, (req, res, next) => {
-        const {name, folderid, content} = req.body
-        const newNote = {name, folderid, content}
+        const {name, content, date_modified, folder_id} = req.body
+        const newNote = {name, content, folder_id}
 
-        for(const [key, value] of Object.entries(newNote))
+        for(const [key, value] of Object.entries(newNote)) {
             if (value == null)
                 return res.status(400).json({
                     error: {message: `Missing '${key}' in request body`}
                 })
+        }
 
-        noteService.insertNote(req.app.get("db"), newNote)
+        newNote.date_modified = date_modified;
+
+        noteService.insertNote(req.app.get('db'), newNote)
             .then(note => {
                 res
                     .status(201)
@@ -45,7 +49,7 @@ notesRouter
 notesRouter
     .route("/:note_id")
     .all((req, res, next) => {
-       noteService.getById(req.app.get("db"), req.params.note_id)
+       noteService.getById(req.app.get('db'), req.params.note_id)
             .then(note => {
                 if (!note) {
                     return res.status(404).json({
@@ -61,15 +65,15 @@ notesRouter
         res.json(serializeNote(res.note))
     })
     .delete((req, res, next) => {
-        noteService.deleteNote(req.app.get("db"), req.params.note_id)
-            .then(numRowsAffected => {
+        noteService.deleteNote(req.app.get('db'), req.params.note_id)
+            .then(() => {
                 res.status(204).end()
             })
             .catch(next)
     })
     .patch(jsonParser, (req, res, next) => {
-        const {content} = req.body
-        const noteToUpdate = {content}
+        const {name, content, folder_id} = req.body
+        const noteToUpdate = {name, content, folder_id}
 
         const numberofValues = Object.values(noteToUpdate).filter(Boolean).length
             
@@ -79,11 +83,11 @@ notesRouter
             })
 
         noteService.updateNote(
-            req.app.get("db"),
+            req.app.get('db'),
             req.params.note_id,
             noteToUpdate
         )
-            .then(numRowsAffected => {
+            .then(() => {
                 res.status(204).end()
             })
             .catch(next)
