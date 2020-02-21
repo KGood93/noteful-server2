@@ -8,10 +8,9 @@ const jsonParser = express.json()
 
 const serializeNote = note => ({
     id: note.id,
-    name: xss(note.name),
+    name: xss(note.note_name),
     content: xss(note.content),
-    date_modified: note.date_modified,
-    folder_id: note.folder_id,
+    folderid: note.folder_id,
 });
 
 notesRouter
@@ -24,8 +23,8 @@ notesRouter
             .catch(next)
     })
     .post(jsonParser, (req, res, next) => {
-        const {name, content, date_modified, folder_id} = req.body
-        const newNote = {name, content, folder_id}
+        const {note_name, content, folder_id} = req.body
+        const newNote = {note_name, content, folder_id}
 
         for(const [key, value] of Object.entries(newNote)) {
             if (value == null)
@@ -33,8 +32,6 @@ notesRouter
                     error: {message: `Missing '${key}' in request body`}
                 })
         }
-
-        newNote.date_modified = date_modified;
 
         noteService.insertNote(req.app.get('db'), newNote)
             .then(note => {
@@ -57,7 +54,7 @@ notesRouter
                     })
                 }
                 res.note = note
-                    next()
+                next()
             })
             .catch(next)
     })
@@ -66,14 +63,14 @@ notesRouter
     })
     .delete((req, res, next) => {
         noteService.deleteNote(req.app.get('db'), req.params.note_id)
-            .then(() => {
+            .then(numRowsAffected => {
                 res.status(204).end()
             })
             .catch(next)
     })
     .patch(jsonParser, (req, res, next) => {
-        const {name, content, folder_id} = req.body
-        const noteToUpdate = {name, content, folder_id}
+        const {content} = req.body
+        const noteToUpdate = {content}
 
         const numberofValues = Object.values(noteToUpdate).filter(Boolean).length
             
@@ -87,7 +84,7 @@ notesRouter
             req.params.note_id,
             noteToUpdate
         )
-            .then(() => {
+            .then(numRowsAffected => {
                 res.status(204).end()
             })
             .catch(next)

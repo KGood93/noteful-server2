@@ -29,7 +29,6 @@ const folderService = {
         return knex('noteful_folders')
             .where({id})
             .update(newFolderFields)
-            .returning('*')
     }
 }
 

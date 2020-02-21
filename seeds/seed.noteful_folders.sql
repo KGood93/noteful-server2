@@ -1,4 +1,4 @@
-INSERT INTO noteful_folders (name)
+INSERT INTO noteful_folders (folder_name)
     VALUES
         ('Test Folder One'),
         ('Test Folder Two'),

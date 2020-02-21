@@ -8,7 +8,7 @@ const jsonParser = express.json()
 
 const serializeFolder = folder => ({
     id: folder.id,
-    name: xss(folder.name)
+    name: xss(folder.folder_name)
 })
 
 foldersRouter
@@ -18,29 +18,22 @@ foldersRouter
             req.app.get('db')
         )
         .then(folders => {
-            //res.json(folders)
-            res.json(folders.map(serializeFolder))
+            res.json(folders)
         })
         .catch(next)
     })
     .post(jsonParser, (req, res, next) => {
-        const { name } = req.body
-        const newFolder = { name }
+        const { folder_name } = req.body
+        const newFolder = { folder_name }
 
-        if(req.body.name == null || req.body.name == '') {
-            return res.status(400).json({
-                error: {
-                    message: `Missing 'name' in request body`
-                }
-            })
+
+        for (const [key, value] of Object.entries(newFolder)) {
+           if (value == null) {
+               return res.status(400).json({
+                    error: { message: `Missing '${key}' in request body`}
+                })
+            }
         }
-        //for (const [key, value] of Object.entries(newFolder)) {
-        //    if (value == null) {
-        //        return res.status(400).json({
-        //            error: { message: `Missing '${key}' in request body`}
-        //        })
-        //    }
-        //}
 
         folderService.insertFolder(
             req.app.get('db'),
@@ -49,8 +42,8 @@ foldersRouter
         .then(folder => {
             res
                 .status(201)
-                .location(path.posix.join(req.originalUrl, `/${folder.id}`))
-                .json(serializeFolder(folder))
+                .location(path.posix.join(`${req.originalUrl}/${folder.id}`))
+                .json(folder)
         })
         .catch(next)
     })
@@ -69,7 +62,7 @@ foldersRouter
             res.folder = folder
             next()
         })
-        //.catch(next)
+        .catch(next)
     })
     .get((req, res, next) => {
         res.json(serializeFolder(res.folder))
@@ -88,22 +81,14 @@ foldersRouter
         const { name } = req.body
         const folderToUpdate = { name }
 
-        if(name == null || name =='') {
+        const numberOfValues = Object.values(folderToUpdate).filter(boolean).length
+        if (numberOfValues === 0) {
             return res.status(400).json({
                 error: {
-                    message: `name field is required`
+                    message: `Request must contain a name`
                 }
             })
         }
-
-        //const numberOfValues = Object.values(folderToUpdate).filter(boolean).length
-        //if (numberOfValues === 0) {
-        //    return res.status(400).json({
-        //        error: {
-        //            message: `Request must contain a name`
-        //        }
-        //    })
-        //}
 
         folderService.updateFolder(
             req.app.get('db'),

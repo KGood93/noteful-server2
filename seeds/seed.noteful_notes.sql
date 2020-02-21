@@ -1,4 +1,4 @@
-INSERT INTO noteful_notes (name, content, folder_id)
+INSERT INTO noteful_notes (note_name, content, folder_id)
     VALUES 
         ('Note One', 'Note One, Folder One', 1),
         ('Note Two', 'Note Two, Folder One', 1),
